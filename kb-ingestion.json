@@ -1,0 +1,153 @@
+{
+  "name": "DelAI KB ingestion",
+  "nodes": [
+    {
+      "id": "df03bcba-267c-4c20-9917-b8ca940d2303",
+      "name": "Запустить подгрузку базы",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "id": "0f5e07f8-da7e-42f7-a087-13329f7a253b",
+      "name": "Документы базы знаний DelAI",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const docs = [\n  { title: \"О компании DelAI\", text: \"DelAI - агентство автоматизации бизнес-процессов с помощью ИИ, n8n и чат-ботов. Делаем под ключ за 5-7 дней. Работаем с малым и средним бизнесом. Сайт delai.agency.\" },\n  { title: \"Продажи и работа с клиентами\", text: \"Направление продаж и клиентов: обработка входящих заявок и передача в CRM, автоматический follow-up клиентам, генерация коммерческих предложений, квалификация лидов через ИИ (горячий/тёплый/холодный), напоминания менеджерам о сделках, автоматические CRM-воронки.\" },\n  { title: \"Маркетинг и контент\", text: \"Направление маркетинга и контента: контент-план и автогенерация постов через ИИ, автопостинг в соцсети, ответы на комментарии, триггерные рассылки по email/WhatsApp/Telegram, сбор аналитики рекламы в единый дашборд, мониторинг упоминаний бренда.\" },\n  { title: \"E-commerce и маркетплейсы\", text: \"Направление e-commerce и маркетплейсов: генерация карточек товаров для Wildberries и Ozon, автоответы на отзывы покупателей, создание инфографики, генерация описаний товаров, мониторинг цен конкурентов, синхронизация остатков между площадками.\" },\n  { title: \"Документы и внутренние процессы\", text: \"Направление документов и процессов: генерация договоров, счетов и актов из шаблонов, автозаполнение Word данными из Excel, транскрибация совещаний в протокол, автоматические отчёты в Telegram и email, согласование документов по цепочке подписантов.\" },\n  { title: \"HR и работа с персоналом\", text: \"Направление HR: ИИ-скрининг резюме, бот первичного собеседования в Telegram, онбординг новых сотрудников, работа с самозанятыми (чеки, учёт выплат), табель учёта рабочего времени, напоминания сотрудникам о задачах.\" },\n  { title: \"Чат-боты и ИИ-ассистенты\", text: \"Направление чат-ботов и ассистентов: боты-консультанты для сайта (отвечают как менеджер), Telegram и WhatsApp боты для бизнеса, запись клиентов на услуги с интеграцией календаря, FAQ-боты для техподдержки, интеграция ботов с CRM, 1С и Google Sheets.\" },\n  { title: \"Как мы работаем\", text: \"Этапы работы DelAI: 1) квалификация - понимаем боль и что автоматизировать, 2) план и предложение, 3) согласование регламентов, 4) реализация MVP, 5) демонстрация результата, 6) запуск. После запуска - поддержка 30 дней.\" },\n  { title: \"Цены и стоимость\", text: \"Цены DelAI на сайте не публикуются - считаем индивидуально после короткого созвона или переписки под конкретную задачу. Простой workflow стоит от небольших сумм, комплексное внедрение дороже. Точную смету даём под задачу клиента.\" }\n];\nreturn docs.map((d) => ({ json: { title: d.title, text: d.text } }));"
+      }
+    },
+    {
+      "id": "96c1a85c-c964-4e5c-a7e2-7ce9468a9f73",
+      "name": "In-Memory Vector Store (insert)",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.3,
+      "position": [
+        720,
+        300
+      ],
+      "parameters": {
+        "mode": "insert",
+        "memoryKey": {
+          "__rl": true,
+          "mode": "id",
+          "value": "delai_kb"
+        },
+        "clearStore": true
+      }
+    },
+    {
+      "id": "72f0ff7e-fa05-4301-a21b-ea6476686c22",
+      "name": "OpenAI Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        720,
+        480
+      ],
+      "parameters": {
+        "model": "text-embedding-3-small"
+      }
+    },
+    {
+      "id": "a9328eff-714c-4f39-80de-16426e2270a6",
+      "name": "Загрузчик документов",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        900,
+        480
+      ],
+      "parameters": {
+        "dataType": "json",
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.text }}",
+        "textSplittingMode": "simple",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "title",
+                "value": "={{ $json.title }}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "7d3d75d0-5d67-4b70-acf0-823ab789ea45",
+      "name": "Sticky Note 4014c9b5",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        190,
+        250
+      ],
+      "parameters": {
+        "content": "## DelAI KB ingestion\nЗагружает базу знаний DelAI (9 документов по направлениям) в In-Memory Vector Store с ключом delai_kb. Запускать вручную после старта n8n и после каждого изменения базы.",
+        "color": 4,
+        "width": 780,
+        "height": 200
+      }
+    }
+  ],
+  "connections": {
+    "Запустить подгрузку базы": {
+      "main": [
+        [
+          {
+            "node": "Документы базы знаний DelAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Документы базы знаний DelAI": {
+      "main": [
+        [
+          {
+            "node": "In-Memory Vector Store (insert)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "In-Memory Vector Store (insert)",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Загрузчик документов": {
+      "ai_document": [
+        [
+          {
+            "node": "In-Memory Vector Store (insert)",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  }
+}
